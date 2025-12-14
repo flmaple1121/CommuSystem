@@ -19,6 +19,7 @@ slprj/
 *.fig
 *.eps
 *.pdf
+html/
 
 # --- Filter Designer Files ---
 # Keep *.fda files tracked so you can edit filters later.
