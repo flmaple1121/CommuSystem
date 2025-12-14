@@ -4,7 +4,7 @@ classdef Receiver < handle
     
     properties
         M, Rs, Ts, fc, Vd, Ns
-        rolloff = 0.22; span = 10;
+        rolloff = 0.22; span = 40;
         
         b, a        % IIR Filter Coefficients
         mf_coeffs   % Matched Filter (RRC)

@@ -9,7 +9,7 @@ classdef Transmitter < handle
         
         % Filter Params
         rolloff = 0.22;
-        span = 10;
+        span = 40;
         
         % Outputs
         mapping, upsampling, pulse_shaping, dac, modulation
