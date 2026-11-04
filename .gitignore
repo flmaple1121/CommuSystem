@@ -1,31 +1,41 @@
-# --- MATLAB Autosaves & Temporary Files ---
-# These are backup files created automatically by MATLAB
+# MATLAB autosaves, build products, and workspace dumps
 *.asv
 *.autosave
 slprj/
 *.slxc
+matlab_workspace
 
 # --- Compiled / Binary Files ---
 # Binary files generated during execution (not source code)
 *.mex*
 *.oct
 
-# --- Simulation Outputs (Images & Figures) ---
-# Recommendation: Do not version control generated images. 
-# It is better to version control the code that generates them.
+# Local lab reports, Live Editor reports, and submission archives
+# The executable lab source is maintained in run_lab.m.
+*.mlx
+*.pdf
+*.doc
+*.docx
+*.odt
+*.html
+*.htm
+*.zip
+/html/
+/pdf/
+/pictures/
+/reports/
+/Qifeng LIU_TP3+4/
+
+# Generated plots
 *.png
 *.jpg
 *.jpeg
 *.fig
 *.eps
-*.pdf
-html/
 
-# --- Filter Designer Files ---
-# Keep *.fda files tracked so you can edit filters later.
-# Uncomment the line below only if you want to IGNORE filter designs.
-# *.fda
+# Filter coefficients (*.mat) and editable designs (*.fda) are source assets.
 
 # --- Operating System Files ---
 .DS_Store
 Thumbs.db
+Desktop.ini

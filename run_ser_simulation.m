@@ -11,12 +11,13 @@
 % 4. Benchmarking: Compares simulation results against the theoretical M-ASK curve.
 
 clear; close all; clc;
+rng(42, 'twister');     % Reproducible payloads and channel noise
 
 % Load pre-designed FIR filter coefficients (variable 'Num')
 load("my_filter_coeffs_FIR.mat"); 
 
 %% 1. System Configuration
-M = 4;                  % Modulation Order (4-ASK)
+M = 16;                % Modulation order (16-ASK); try 2, 4, or 8 as well
 Rs = 3.84e6;            % Symbol Rate (3.84 MBaud)
 fc = 1920e6;            % Carrier Frequency (1.92 GHz)
 Vd = 1;                 % Voltage Distance between symbols
@@ -26,8 +27,8 @@ Ns = 64;                % Samples per symbol (Baseband Oversampling)
 Fs_analog = 4500e6;     % DAC/RF Sampling Frequency (4.5 GHz)
 
 % Simulation Parameters
-SNR_dB_range = 0:1:20;  % SNR range in dB (Es/N0)
-payload_len = 100000;   % Number of payload symbols to simulate per SNR point
+SNR_dB_range = 0:1:35;  % SNR range in dB (Es/N0)
+payload_len = 2000;     % Symbols per SNR point; increase for finer SER estimates
                         % Note: Total symbols = preamble_len + payload_len
 
 % Initialize Results Storage
@@ -78,11 +79,11 @@ for i = 1:length(SNR_dB_range)
     % --- B. AWGN Channel & Noise Calibration ---
     % The 'awgn' function adds noise over the entire sampling bandwidth (Fs_analog).
     % However, the receiver's matched filter limits the noise bandwidth to approx Rs.
-    % We subtract this "Processing Gain" from the input SNR to ensure the 
-    % effective Es/N0 at the decision point matches 'current_snr'.
+    % For a real RF waveform: Es/N0 = (Fs_analog / (2*Rs)) * SNR_sample.
+    % The factor of two follows the real-noise PSD convention N0/2.
     
     OversamplingFactor = Fs_analog / tx.Rs;
-    process_gain = 10 * log10(OversamplingFactor);
+    process_gain = 10 * log10(OversamplingFactor / 2);
     snr_corrected = current_snr - process_gain;
     
     r_noisy = awgn(tx.modulation.signal, snr_corrected, 'measured');
@@ -148,14 +149,10 @@ figure('Name', 'SER vs SNR Performance (Preamble Sync)');
 
 % --- Theoretical Curve Calculation ---
 SNR_lin = 10.^(SNR_dB_range / 10); 
-% Define Q-function manually for portability
-% (This serves as a fallback implementation using erfc)
-my_qfunc = @(x) 0.5 * erfc(x / sqrt(2));
-
 % M-ASK Theoretical SER Formula:
-% Ps = 2 * ((M-1)/M) * Q( sqrt( 3 * EsN0 / (M^2-1) ) )
-% If communications tool is not available, please use my_qfunc instead of qfunc
-theo_SER = 2 * ((M-1)/M) * qfunc(sqrt(3 * SNR_lin / (M^2 - 1)));
+% Ps = 2 * ((M-1)/M) * Q( sqrt( 6 * EsN0 / (M^2-1) ) )
+% This ideal coherent M-PAM result excludes synchronization and AGC errors.
+theo_SER = 2 * ((M-1)/M) * qfunc(sqrt(6 * SNR_lin / (M^2 - 1)));
 
 % --- Plotting ---
 % 1. Simulation Results (Blue Markers)

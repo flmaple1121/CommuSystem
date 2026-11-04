@@ -256,5 +256,63 @@ classdef Transmitter < handle
             legend('Location', 'best');
             xlim([0, time_limit]); 
         end
+        function plot_modulator_psd(obj, n_fft)
+            % PLOT_MODULATOR_PSD Plots the two-sided RF PSD in dB/Hz.
+            %
+            % Usage:
+            %   tx.plot_modulator_psd();        % Use default FFT length
+            %   tx.plot_modulator_psd(4096);    % Use specific FFT length
+            %
+            % Args:
+            %   n_fft (int, optional): Number of points for FFT. Defaults to 2^16 (65536).
+            %                          Using a power of 2 is faster.
+
+            if length(obj.modulation.signal) < 2
+                warning('Transmitter: At least two modulated samples are required.');
+                return;
+            end
+
+            % Default FFT length
+            if nargin < 2 || isempty(n_fft)
+                n_fft = 2^16; % 65536 points for good resolution
+            end
+            validateattributes(n_fft, {'numeric'}, {'scalar', 'integer', '>=', 2});
+
+            % 1. Prepare Signal Slice
+            % We take a slice of the signal to avoid out-of-memory errors on huge arrays
+            len_sig = length(obj.modulation.signal);
+            n_use = min(len_sig, n_fft);
+
+            % Extract middle segment to avoid transient edges
+            start_idx = floor((len_sig - n_use)/2) + 1;
+            slice_sig = obj.modulation.signal(start_idx : start_idx + n_use - 1);
+
+            % 2. Estimate PSD, including sample-rate and window-energy scaling.
+            dt = obj.modulation.time(2) - obj.modulation.time(1);
+            Fs = 1 / dt;
+            win = hann(n_use, 'periodic');
+            [P_mag, f_axis] = periodogram(slice_sig(:), win, n_fft, Fs, 'centered');
+            P_db = 10 * log10(max(P_mag, realmin));
+
+            % 3. Plot the PSD around the positive carrier.
+            figure('Name', 'Tx: Modulator PSD');
+
+            % Plot in MHz for readability (since fc is usually high)
+            plot(f_axis / 1e6, P_db, 'b', 'LineWidth', 1);
+
+            grid on;
+            title(['Power Spectral Density (Center Freq = ' num2str(obj.fc/1e6) ' MHz)']);
+            xlabel('Frequency (MHz)');
+            ylabel('Power Spectral Density (dB/Hz)');
+
+            % Auto-zoom to relevant bandwidth (e.g., fc +/- 4*Rs)
+            % But show at least a wide enough view
+            xlim([ (obj.fc - 4*obj.Rs)/1e6, (obj.fc + 4*obj.Rs)/1e6 ]);
+
+            % Add a marker at the carrier frequency
+            xline(obj.fc/1e6, 'r--', 'DisplayName', 'Carrier Freq');
+            xline(-obj.fc/1e6, 'r--', 'HandleVisibility', 'off'); % Negative carrier
+            legend('Signal Spectrum', 'Carrier Frequency');
+        end
     end
 end
